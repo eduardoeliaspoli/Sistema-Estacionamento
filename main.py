@@ -65,10 +65,13 @@ for botao_bool in lista_botoes:
 botao_enviar = st.button('Enviar')
 if botao_enviar and informar_placa != '':
     cursor.execute('INSERT INTO veiculos(placa_veiculo) VALUES (%s)', (informar_placa,))
+    cursor.commit()
     cursor.execute(f'UPDATE vagas set ocupado = TRUE where numero_vaga = {st.session_state["indice_botao"]}')
+    cursor.commit()
     cursor.execute(
         'INSERT INTO veiculo_estacionado(placa_veiculo,numero_vaga,hora_entrada) VALUES (%s,%s,current_timestamp())',
         (informar_placa, st.session_state["indice_botao"],))
+    cursor.commit()
     conexao.commit()
     st.success(f'Veiculo com a placa {informar_placa} cadastrado na vaga {st.session_state["indice_botao"]} com sucesso!')
     sleep(2)
