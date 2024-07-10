@@ -14,7 +14,7 @@ with open(".\style.css") as f:
 
 st.title('Página de login')
 
-# Faz a conexão com o banco de dados
+
 conexao = mysql.connector.connect(
     host='localhost',
     username='root',
@@ -29,12 +29,11 @@ informar_placa = st.text_input('Informe a placa do veiculo', placeholder='Ex: AA
 col1, col2, col3 = st.columns(3)
 i = 0
 
-# CONSULTA AS VAGAS
+
 cursor.execute('SELECT v.numero_vaga, v.ocupado FROM vagas v where ocupado = false')
 
-# CARREGA A VARIÁVEL 'vagas' COM AS VAGAS CONSULTADAS. 'vagas' VEM COMO LISTA DE TUPLAS
+
 vagas = cursor.fetchall()
-print(vagas)
 
 if 'indice_botao' not in st.session_state:
     st.session_state['indice_botao'] = 0
@@ -55,23 +54,26 @@ for vaga in vagas:
                 on_click=clique_botao, 
                 args=[int(vaga[0])]
             ))
-        print(vaga[0])
     var_controle = (var_controle + 1) % 3
 
 for botao_bool in lista_botoes:
     if botao_bool:
         st.write(f'{st.session_state["indice_botao"]}, tipo: {type(st.session_state["indice_botao"])}')
-        
+
+
+print()
 botao_enviar = st.button('Enviar')
 if botao_enviar and informar_placa != '':
     cursor.execute('INSERT INTO veiculos(placa_veiculo) VALUES (%s)', (informar_placa,))
-    cursor.commit()
+    conexao.commit()
     cursor.execute(f'UPDATE vagas set ocupado = TRUE where numero_vaga = {st.session_state["indice_botao"]}')
-    cursor.commit()
+    conexao.commit()
+    cursor.execute(f'SELECT id from veiculos where placa_veiculo = "{informar_placa}"')
+    veiculo_id = cursor.fetchall()
+    conexao.commit()
     cursor.execute(
-        'INSERT INTO veiculo_estacionado(placa_veiculo,numero_vaga,hora_entrada) VALUES (%s,%s,current_timestamp())',
-        (informar_placa, st.session_state["indice_botao"],))
-    cursor.commit()
+        'INSERT INTO veiculo_estacionado(placa_veiculo_id,numero_vaga_id,hora_entrada) VALUES (%s,%s,current_timestamp())',
+        (veiculo_id[0][0], st.session_state["indice_botao"],))
     conexao.commit()
     st.success(f'Veiculo com a placa {informar_placa} cadastrado na vaga {st.session_state["indice_botao"]} com sucesso!')
     sleep(2)

@@ -1,6 +1,7 @@
 import streamlit as st
 import mysql.connector
 from datetime import datetime
+from time import sleep
 
 conexao = mysql.connector.connect(
     host='localhost',
@@ -25,6 +26,7 @@ def login_usuario(nome, senha):
     return usuario
 
 
+
 def clicou_confirmar():
     cursor.execute('SELECT v.numero_vaga FROM vagas v')
     vagas = cursor.fetchall()
@@ -34,9 +36,9 @@ def clicou_confirmar():
 
     s = ''
     for num_vaga_nova in range(ult_numero_vaga + 1, ult_numero_vaga + qtd_vagas + 1):
-        s += f'({num_vaga_nova}, NULL),'
+        s += f'({num_vaga_nova}, FALSE),'
 
-    cursor.execute(f'INSERT INTO vagas (numero_vaga, veiculo_id) VALUES {s[:-1]};')
+    cursor.execute(f'INSERT INTO vagas (numero_vaga, ocupado) VALUES {s[:-1]};')
     conexao.commit()
 
 
@@ -46,18 +48,18 @@ def clicou_remover_vaga(vaga_numero):
 
 
 def clicou_liberar_vaga(vaga_numero):
-    cursor.execute('UPDATE veiculo_estacionado SET hora_saida = %s WHERE numero_vaga = %s AND hora_saida IS NULL',
+    cursor.execute('UPDATE veiculo_estacionado SET hora_saida = %s WHERE numero_vaga_id = %s AND hora_saida IS NULL',
                    (datetime.now(), vaga_numero))
-    cursor.execute('UPDATE vagas SET vaga_ocupada = FALSE WHERE numero_vaga = %s', (vaga_numero,))
+    cursor.execute('UPDATE vagas SET ocupado = FALSE WHERE numero_vaga = %s', (vaga_numero,))
     conexao.commit()
 
 
 def apos_login():
     st.header('Vagas Ocupadas')
     cursor.execute('''
-        SELECT v.numero_vaga, ve.placa_veiculo, ve.hora_entrada
+        SELECT v.numero_vaga, ve.placa_veiculo_id, ve.hora_entrada
         FROM vagas v
-        JOIN veiculo_estacionado ve ON v.numero_vaga = ve.numero_vaga
+        JOIN veiculo_estacionado ve ON v.numero_vaga = ve.numero_vaga_id
         WHERE ve.hora_saida IS NULL
     ''')
     vagas_ocupadas = cursor.fetchall()
@@ -65,13 +67,13 @@ def apos_login():
     if vagas_ocupadas:
         for index, vaga in enumerate(vagas_ocupadas):
             st.write(f"Vaga: {vaga[0]}")
-            st.write(f"Placa do Veículo: {vaga[1]}")
+            st.write(f"ID do veiculo: {vaga[1]}")
             st.write(f"Hora de Entrada: {vaga[2]}")
             if st.button(f'Liberar Vaga {vaga[0]}', key=f'liberar_{index}'):
                 clicou_liberar_vaga(vaga[0])
                 st.success(f'Vaga {vaga[0]} liberada com sucesso!')
-                st.experimental_rerun()
-            st.write("---")
+                sleep(2)
+                st.rerun()
     else:
         st.write("Nenhuma vaga ocupada no momento.")
 
@@ -94,33 +96,14 @@ def apos_login():
         conexao.commit()
         st.success('Novo administrador adicionado!')
 
-    st.header('Pesquisar Vaga por Placa')
-    placa_pesquisa = st.text_input('Digite a placa do veículo:')
-    if st.button('Pesquisar'):
-        cursor.execute('''
-            SELECT v.numero_vaga, ve.placa_veiculo, ve.hora_entrada
-            FROM vagas v
-            JOIN veiculo_estacionado ve ON v.numero_vaga = ve.numero_vaga
-            WHERE ve.hora_saida IS NULL AND ve.placa_veiculo = %s
-        ''', (placa_pesquisa,))
-        resultado = cursor.fetchall()
-        if resultado:
-            for res in resultado:
-                st.write(f"Vaga: {res[0]}")
-                st.write(f"Placa do Veículo: {res[1]}")
-                st.write(f"Hora de Entrada: {res[2]}")
-                st.write("---")
-        else:
-            st.write("Nenhuma vaga ocupada encontrada para esta placa.")
-
     st.header('Histórico de Veículos')
     if st.button('Exibir Histórico de Veículos'):
         cursor.execute('SELECT * FROM veiculo_estacionado')
         historico = cursor.fetchall()
         for hist in historico:
-            st.write(f"Placa do Veículo: {hist[1]}")
+            st.write(f"ID do veiculo: {hist[3]}")
             st.write(f"Vaga: {hist[2]}")
-            st.write(f"Hora de Entrada: {hist[3]}")
+            st.write(f"Hora de Entrada: {hist[1]}")
             st.write(f"Hora de Saída: {hist[4]}")
             st.write("---")
         if st.button('Esconder Histórico de Veículos'):
@@ -146,4 +129,4 @@ else:
             st.session_state['login_nome'] = login['nome']
         else:
             st.error('Nome ou senha incorreto(a).')
- 
+            
