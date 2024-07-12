@@ -56,10 +56,6 @@ for vaga in vagas:
             ))
     var_controle = (var_controle + 1) % 3
 
-for botao_bool in lista_botoes:
-    if botao_bool:
-        st.write(f'{st.session_state["indice_botao"]}, tipo: {type(st.session_state["indice_botao"])}')
-
 
 print()
 botao_enviar = st.button('Enviar')
@@ -75,6 +71,6 @@ if botao_enviar and informar_placa != '':
         'INSERT INTO veiculo_estacionado(placa_veiculo_id,numero_vaga_id,hora_entrada) VALUES (%s,%s,current_timestamp())',
         (veiculo_id[0][0], st.session_state["indice_botao"],))
     conexao.commit()
-    st.success(f'Veiculo com a placa {informar_placa} cadastrado na vaga {st.session_state["indice_botao"]} com sucesso!')
+    st.success(f'Veiculo com a placa {informar_placa} com o id {veiculo_id[0][0]} cadastrado na vaga {st.session_state["indice_botao"]} com sucesso')
     sleep(2)
     st.rerun()

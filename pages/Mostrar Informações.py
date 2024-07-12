@@ -1,24 +1,53 @@
 import streamlit as st
+import mysql.connector
 
-col1, col2, col3 = st.columns(3)
-tiles = list(range(12))
-botoes = list(range(12))
-i = 0
-with col1:
-    for i in range(3):
-        tiles[i] = st.container(height=150)
-        with tiles[i]:
-            botoes[i] = st.write(f'Vaga {i + 1}', key=f'bt-c1-{i}')
-        i += 1
-with col2:
-    for i in range(3):
-        tiles[i] = st.container(height=150)
-        with tiles[i]:
-            botoes[i] = st.write(f'Vaga {i + 4}', key=f'bt-c2-{i}')
-        i += 1
-with col3:
-    for i in range(3):
-        tiles[i] = st.container(height=150)
-        with tiles[i]:
-            botoes[i] = st.write(f'Vaga {i + 7}', key=f'bt-c3-{i}')
-        i += 1
+st.set_page_config(
+    page_title='Mostrar informações',
+    page_icon="🚗"
+)
+
+
+conexao = mysql.connector.connect(
+    host='localhost',
+    user='root',
+    password='root',
+    database='estacionamento'
+)
+
+cursor = conexao.cursor()
+
+st.title('Página dos dados')
+
+with st.form('form-visualizar-dados', clear_on_submit=True):
+
+    informacoes_veiculo = st.text_input('Informe a placa cadastrada', placeholder='Ex: AAA1A11')
+    botao_dados = st.form_submit_button('Enviar')
+
+    if botao_dados:
+
+        cursor.execute("SELECT * FROM veiculos WHERE placa_veiculo = %s", (informacoes_veiculo,))
+        veiculo = cursor.fetchone()
+
+        if veiculo:
+            st.write(f"Código do veículo: {veiculo[0]}")
+            st.write(f"Placa cadastrada: {veiculo[1]}")
+
+            
+            cursor.execute("""
+                SELECT veiculo_estacionado.numero_vaga_id, veiculo_estacionado.hora_entrada
+                FROM veiculo_estacionado
+                WHERE veiculo_estacionado.placa_veiculo_id = %s
+                ORDER BY veiculo_estacionado.hora_entrada DESC LIMIT 1
+            """, (veiculo[0],))
+            estacionamento = cursor.fetchone()
+
+            if estacionamento:
+                st.write(f"Vaga: {estacionamento[0]}")
+                st.write(f"Hora de Entrada: {estacionamento[1]}")
+            else:
+                st.warning('Veículo não está estacionado no momento.')
+        else:
+            st.warning('Placa não encontrada. Por favor, verifique os dados informados.')
+
+cursor.close()
+conexao.close()

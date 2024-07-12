@@ -1,7 +1,23 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import mysql.connector
 
-chart_data = pd.DataFrame(np.random.randn(20, 3), columns=["a", "b", "c"])
+conexao = mysql.connector.connect(
+    host='localhost',
+    username='root',
+    password='root',
+    database='estacionamento'
+)
 
-st.line_chart(chart_data)
+cursor = conexao.cursor()
+
+cursor.execute('select * from historico_vendas')
+historico = cursor.fetchall
+print(historico)
+
+dados = pd.DataFrame({
+    "col1": list(range(1,31)),
+    "col2": 3
+})
+
+st.bar_chart(dados,x="col1",y="col2")

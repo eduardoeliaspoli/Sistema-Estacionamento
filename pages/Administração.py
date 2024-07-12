@@ -10,6 +10,12 @@ conexao = mysql.connector.connect(
     database='estacionamento'
 )
 
+st.set_page_config(
+    page_title='Administração',
+    page_icon="🚗"
+)
+
+
 cursor = conexao.cursor()
 
 # Armazenar variáveis para usar em callbacks
@@ -47,12 +53,15 @@ def clicou_remover_vaga(vaga_numero):
     conexao.commit()
 
 
-def clicou_liberar_vaga(vaga_numero):
+
+def clicou_liberar_vaga(vaga_numero,id_placa):
     cursor.execute('UPDATE veiculo_estacionado SET hora_saida = %s WHERE numero_vaga_id = %s AND hora_saida IS NULL',
                    (datetime.now(), vaga_numero))
     cursor.execute('UPDATE vagas SET ocupado = FALSE WHERE numero_vaga = %s', (vaga_numero,))
+    cursor.execute('INSERT INTO historico_vendas(data_saida) VALUES (current_timestamp())')
+    cursor.execute('DELETE FROM veiculos where id = %s', (id_placa,))
+    cursor.execute('Delete from veiculo_estacionado where id = %s',(id_placa,))
     conexao.commit()
-
 
 def apos_login():
     st.header('Vagas Ocupadas')
@@ -63,6 +72,8 @@ def apos_login():
         WHERE ve.hora_saida IS NULL
     ''')
     vagas_ocupadas = cursor.fetchall()
+    
+
 
     if vagas_ocupadas:
         for index, vaga in enumerate(vagas_ocupadas):
@@ -70,7 +81,7 @@ def apos_login():
             st.write(f"ID do veiculo: {vaga[1]}")
             st.write(f"Hora de Entrada: {vaga[2]}")
             if st.button(f'Liberar Vaga {vaga[0]}', key=f'liberar_{index}'):
-                clicou_liberar_vaga(vaga[0])
+                clicou_liberar_vaga(vaga[0],vaga[1])
                 st.success(f'Vaga {vaga[0]} liberada com sucesso!')
                 sleep(2)
                 st.rerun()
@@ -98,13 +109,12 @@ def apos_login():
 
     st.header('Histórico de Veículos')
     if st.button('Exibir Histórico de Veículos'):
-        cursor.execute('SELECT * FROM veiculo_estacionado')
+        cursor.execute('SELECT * FROM historico_vendas')
         historico = cursor.fetchall()
         for hist in historico:
-            st.write(f"ID do veiculo: {hist[3]}")
-            st.write(f"Vaga: {hist[2]}")
-            st.write(f"Hora de Entrada: {hist[1]}")
-            st.write(f"Hora de Saída: {hist[4]}")
+            st.write(f"ID da venda: {hist[0]}")
+            st.write(f"Hora de Saída: {hist[1]}")
+            st.write(f'Valor pago: {hist[2]}')
             st.write("---")
         if st.button('Esconder Histórico de Veículos'):
             st.experimental_rerun()
