@@ -1,2 +1,2 @@
 # Sistema-Estacionamento
-Um sistema de estacionamento, sendo desolvido em python, streamlit, mySQL
+Um sistema de estacionamento, desenvolvido com as tecnologias python, streamlit e mySQL.
